@@ -1,0 +1,155 @@
+---
+title: "Compare synr and human rater validation (using mock data)"
+author: "Lowe Wilsson"
+date: '2022-03-21'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document compares synr's automated consistency test data validation to that of two human raters. *Please note* that this document uses mock data to demonstrate how the actual comparisons with real study data were performed. (the real data unfortunately currently cannot be shared, due to missing ethics board approval)
+
+```{r, message=FALSE, warning=FALSE}
+# Load libraries ----
+# (remember to install the required packages if you don't have them)
+library(synr)
+library(dplyr)
+library(tibble)
+library(ggplot2)
+```
+
+## Load data
+```{r}
+HUMAN_RATER_PATH_1 <- '../data/humanrater1_validation_results.csv'
+HUMAN_RATER_PATH_2 <- '../data/humanrater2_validation_results.csv'
+SYNR_VALIDATION_PATH <- '../data/synr_validation_results.csv'
+RAW_DATA_PATH <- '../data/raw_data.csv'
+
+hr1_df <- read.csv(HUMAN_RATER_PATH_1, stringsAsFactors = FALSE)
+hr2_df <- read.csv(HUMAN_RATER_PATH_2, stringsAsFactors = FALSE)
+synr_df <- read.csv(SYNR_VALIDATION_PATH, stringsAsFactors = FALSE)
+raw_df <- read.csv(
+  RAW_DATA_PATH,
+  stringsAsFactors = FALSE,
+  na.strings = c("NA", "", "nocolor")
+)
+```
+
+Human ratings are only for digit- and single letter-related trials, and of course didn't involve synr-specific measures like 'number of clusters', so we reduce clutter by only keeping the most relevant synr output data here.
+```{r}
+synr_df <- synr_df %>%
+  select(participant_id, lett_valid, dig_valid)
+```
+
+We also form a participantgroup object for generating graphs of participant data which raters don't agree on.
+```{r}
+pg <- create_participantgroup(
+  raw_df,
+  n_trials_per_grapheme = 3,
+  id_col_name = 'participant_id',
+  symbol_col_name = 'trial_symbol',
+  color_col_name = 'response_color',
+  color_space_spec = 'Luv'
+)
+```
+
+## Agreement between human raters
+```{r, warning=FALSE}
+hr_df <- merge(hr1_df, hr2_df, by='participant_id', suffixes=c('_hr1', '_hr2'))
+letters_agree_mask <-  hr_df['lett_valid_hr1'] == hr_df['lett_valid_hr2']
+prop_agreed_letters <- mean(letters_agree_mask)
+digits_agree_mask <- hr_df['dig_valid_hr1'] == hr_df['dig_valid_hr2']
+prop_agreed_digits <- mean(digits_agree_mask)
+
+# NOTE that this step is irrelevant for the mock data, since
+# human ratings for mock data and synr validation agree in all instances:
+# check plots of participants' data where human raters disagree
+disagree_letter_ids <- hr_df[!letters_agree_mask, 'participant_id']
+for (id in disagree_letter_ids) {
+  print(
+    pg$participants[[id]]$get_plot(symbol_filter = LETTERS, grapheme_size = 3) +
+      labs(title = paste('Participant ID', id))
+  )
+}
+
+disagree_digit_ids <- hr_df[!digits_agree_mask, 'participant_id']
+for (id in disagree_digit_ids) {
+  print(
+    pg$participants[[id]]$get_plot(symbol_filter = 0:9, grapheme_size = 3) +
+      labs(title = paste('Participant ID', id))
+  )
+}
+```
+
+Human raters agreed on `r round(prop_agreed_letters * 100, 2)`% of all sets of letter-related data, and `r round(prop_agreed_digits * 100, 2)`% of all sets of digit-related data.
+
+[Here, the analysis of real data included a list detailing the data sets where raters disagreed, e.g.: ]
+
+* [Participant ID *X* (letters): Only 3 graphemes had complete responses, which means these data should be rated as invalid.]
+
+
+## Agreement between human raters and synr
+
+### Human rater 1 - synr
+```{r, warning=FALSE}
+hr_synr_df <- merge(hr_df, synr_df, by='participant_id') %>%
+  rename(
+    lett_valid_synr = lett_valid,
+    dig_valid_synr = dig_valid
+  )
+letters_agree_mask_hr1 <-  hr_synr_df['lett_valid_hr1'] == hr_synr_df['lett_valid_synr']
+prop_agreed_letters_hr1 <- mean(letters_agree_mask_hr1)
+digits_agree_mask_hr1 <- hr_synr_df['dig_valid_hr1'] == hr_synr_df['dig_valid_synr']
+prop_agreed_digits_hr1 <- mean(digits_agree_mask_hr1)
+
+# NOTE that this step is irrelevant for the mock data, since
+# human ratings for mock data and synr validation agree in all instances:
+disagree_letter_ids_hr1 <- hr_synr_df[!letters_agree_mask_hr1, 'participant_id']
+for (id in disagree_letter_ids_hr1) {
+  print(
+    pg$participants[[id]]$get_plot(symbol_filter = LETTERS, grapheme_size = 3) +
+      labs(title = paste('Participant ID', id))
+  )
+}
+
+disagree_digit_ids_hr1 <- hr_synr_df[!digits_agree_mask_hr1, 'participant_id']
+for (id in disagree_digit_ids_hr1) {
+  print(
+    pg$participants[[id]]$get_plot(symbol_filter = 0:9, grapheme_size = 3) +
+      labs(title = paste('Participant ID', id))
+  )
+}
+```
+
+synr and the first human rater agreed on `r round(prop_agreed_letters_hr1 * 100, 2)`% of all sets of letter-related data, and `r round(prop_agreed_digits_hr1 * 100, 2)`% of all sets of digit-related data.
+
+[Here, the analysis of real data included a list detailing the data sets where rater/synr disagreed]
+
+### Human rater 2 - synr
+```{r, warning=FALSE}
+letters_agree_mask_hr2 <-  hr_synr_df['lett_valid_hr2'] == hr_synr_df['lett_valid_synr']
+prop_agreed_letters_hr2 <- mean(letters_agree_mask_hr2)
+digits_agree_mask_hr2 <- hr_synr_df['dig_valid_hr2'] == hr_synr_df['dig_valid_synr']
+prop_agreed_digits_hr2 <- mean(digits_agree_mask_hr2)
+
+# NOTE that this step is irrelevant for the mock data, since
+# human ratings for mock data and synr validation agree in all instances:
+disagree_letter_ids_hr2 <- hr_synr_df[!letters_agree_mask_hr2, 'participant_id']
+for (id in disagree_letter_ids_hr2) {
+  print(
+    pg$participants[[id]]$get_plot(symbol_filter = LETTERS, grapheme_size = 3) +
+      labs(title = paste('Participant ID', id))
+  )
+}
+disagree_digit_ids_hr2 <- hr_synr_df[!digits_agree_mask_hr2, 'participant_id']
+for (id in disagree_digit_ids_hr2) {
+  print(
+    pg$participants[[id]]$get_plot(symbol_filter = 0:9, grapheme_size = 3) +
+      labs(title = paste('Participant ID', id))
+  )
+}
+```
+
+synr and the second human rater agreed on `r round(prop_agreed_letters_hr2 * 100, 2)`% of all sets of letter-related data, and `r round(prop_agreed_digits_hr2 * 100, 2)`% of all sets of digit-related data.
