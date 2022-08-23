@@ -13,6 +13,7 @@ The synr article's second example application section uses data from [KIND](http
 * *0_generate_rating_plots.R*: Script for producing the plots in 'validation_plots'.
 * *1_validate_participant_data_synr.R*: Script for applying automated data set validation with synr, producing 'data/synr_validation_results.csv'.
 * *2_compare_synr_human_validation.Rmd*: R Markdown document where comparison of human rater/synr validation of data is performed and briefly discussed.
+* *3_dingemanse_validation_ciexyz.R*: R script giving example of applying data validation with CIE XYZ color space in addition to the CIELUV-based validation example discussed in article.
 
 ## Validation plots directory
 Contains plots which summarize participants' color responses, for use by human raters.
