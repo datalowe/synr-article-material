@@ -15,5 +15,8 @@ The synr article's second example application section uses data from [KIND](http
 * *2_compare_synr_human_validation.Rmd*: R Markdown document where comparison of human rater/synr validation of data is performed and briefly discussed.
 * *3_dingemanse_validation_ciexyz.R*: R script giving example of applying data validation with CIE XYZ color space in addition to the CIELUV-based validation example discussed in article.
 
+## synr raw vignettes directory
+* *synr-validate-data-vignette.Rmd*: R Markdown document, holding 'raw' version of synr vignette 'Validating participant color response data'. Above all, this document may be relevant for researchers who wish to produce 3D plots describing results of applying DBSCAN clustering to data. Be aware though that this is an advanced topic, and the vignette does not include that much code documentation. It is strongly recommended to first go through an introductory tutorial (e.g. on YouTube) about the R package plotly before looking at the vignette.
+
 ## Validation plots directory
 Contains plots which summarize participants' color responses, for use by human raters.
